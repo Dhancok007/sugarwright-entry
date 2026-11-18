@@ -21,6 +21,10 @@ export class Renderer {
     const ctx = this.ctx;
     const t = engine.time;
     ctx.save();
+    if (engine.state === 'title') {
+      // centre the cauldron in the title screen's live-demo window
+      ctx.translate(311, -200);
+    }
     if (engine.shake > 0) {
       ctx.translate((Math.random() - 0.5) * engine.shake, (Math.random() - 0.5) * engine.shake);
     }
@@ -96,13 +100,13 @@ export class Renderer {
     circle(ctx, x, y, r + 8);
     ctx.fillStyle = '#3a2a1e';
     circle(ctx, x, y, r + 3);
-    // molten surface
+    // molten surface: a fixed warm candy palette; heat drives the glow and
+    // the flicker, not the hue, so the melt reads molten in every realm
     const flicker = 0.85 + Math.sin(t * 7) * 0.08 + Math.sin(t * 13.7) * 0.05;
     const grad = ctx.createRadialGradient(x, y, 2, x, y, r);
-    const hot = Math.round(120 + heatFrac * 135);
-    grad.addColorStop(0, `rgba(255,${hot + 60},120,1)`);
-    grad.addColorStop(0.55, `rgba(255,${hot},40,0.95)`);
-    grad.addColorStop(1, 'rgba(160,50,10,0.9)');
+    grad.addColorStop(0, 'rgba(255,224,138,1)');
+    grad.addColorStop(0.55, 'rgba(255,158,44,0.97)');
+    grad.addColorStop(1, 'rgba(168,58,10,0.92)');
     ctx.fillStyle = grad;
     circle(ctx, x, y, r * flicker);
     // swirling candy strands

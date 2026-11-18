@@ -32,12 +32,12 @@ export function stageAmbient(engine) {
   engine.bubbles = [];
   engine.projectiles = [];
   engine.pickups = [];
-  place(engine, 'sourling', CAULDRON.x - 170, CAULDRON.y - 60);
-  place(engine, 'sourling', CAULDRON.x + 190, CAULDRON.y + 40);
-  place(engine, 'fizzbat', CAULDRON.x + 90, CAULDRON.y - 150);
-  place(engine, 'wisp', CAULDRON.x - 120, CAULDRON.y + 130);
-  place(engine, 'mite', CAULDRON.x + 240, CAULDRON.y - 90);
-  const b = setBubble(engine, CAULDRON.x - 90, CAULDRON.y - 120, 40, 'berry', ['sourling']);
+  place(engine, 'sourling', CAULDRON.x - 140, CAULDRON.y - 52);
+  place(engine, 'sourling', CAULDRON.x + 160, CAULDRON.y + 68);
+  place(engine, 'fizzbat', CAULDRON.x + 120, CAULDRON.y - 112);
+  place(engine, 'wisp', CAULDRON.x - 120, CAULDRON.y + 78);
+  place(engine, 'mite', CAULDRON.x + 190, CAULDRON.y - 52);
+  const b = setBubble(engine, CAULDRON.x - 150, CAULDRON.y - 40, 40, 'berry', ['sourling']);
   b.trapped[0].x = b.x; b.trapped[0].y = b.y;
   setBubble(engine, CAULDRON.x + 150, CAULDRON.y + 120, 30, 'amber');
 }
@@ -69,7 +69,7 @@ function stagePlay(engine, ui) {
   engine.bossSpawned = true;
   const boss = engine.spawnBoss('bitterking');
   boss.x = 700; boss.y = 215;
-  boss.hp = Math.round(boss.maxHp * 0.33);
+  boss.hp = Math.round(boss.maxHp * 0.32);
   boss.phase = 3;
   // field dressing
   place(engine, 'wisp', 880, 180);
@@ -86,14 +86,15 @@ function stagePlay(engine, ui) {
   // the smith, mid-fight, close to the melt
   engine.player.x = 545; engine.player.y = 300;
   engine.player.aim = Math.atan2(215 - 300, 700 - 545);
-  engine.player.hp = engine.maxHp;
-  engine.player.breath = engine.maxBreath;
-  // a rich late-run ledger
+  // a rich late-run ledger (upgrades/relics first: they change maxHp)
   engine.score = 63660;
   engine.combo = 4.5;
+  engine.comboTimer = 999;
   engine.crystals = 1006;
   engine.upgrades = { wide: 1, quick: 1, twin: 1, sharp: 1 };
   engine.relics = ['stone', 'lucky', 'cannon', 'echo', 'bellows'];
+  engine.player.hp = engine.maxHp;
+  engine.player.breath = engine.maxBreath;
   engine.heat = 115;
   engine.stats.kills = 168;
   engine.stats.trapped = 121;
