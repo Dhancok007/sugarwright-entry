@@ -247,6 +247,7 @@ export class Engine {
   // ---- economy -----------------------------------------------------------
   gainCrystals(n, x, y) {
     let v = Math.round(n * this.crystalMult);
+    if (this.hasRelic('lens')) v = Math.round(v * 1.25);
     if (this.hasRelic('lucky') && this.rng() < 0.2) v *= 2;
     this.crystals += v;
     this.stats.crystalsEarned += v;
@@ -334,9 +335,10 @@ export class Engine {
     }
     this.stats.shatters += set.length;
     this.stats.bestChain = Math.max(this.stats.bestChain, chain);
+    if (this.hasRelic('prism')) this.heat = Math.min(this.maxHeat, this.heat + 2 * set.length);
     if (chain >= 2) {
-      this.setAnnounce(`CHAIN x${chain}!`);
-      this.addText(this.player.x, this.player.y - 44, `CHAIN x${chain}!`, '#ffd23f', 26);
+      this.setAnnounce(`SUGAR CHAIN x${chain}!`);
+      this.addText(this.player.x, this.player.y - 44, `SUGAR CHAIN x${chain}!`, '#ffd23f', 26);
     }
     if (this.up('wind')) this.player.breath = Math.min(this.maxBreath, this.player.breath + this.up('wind') * 4 * set.length);
     this.shake = Math.min(10, 3 + chain);
@@ -348,6 +350,9 @@ export class Engine {
   popBubble(b, power, echo = false) {
     const idx = this.bubbles.indexOf(b);
     if (idx >= 0) this.bubbles.splice(idx, 1);
+    if (!echo && this.hasRelic('heart') && b.trapped.length >= 2 + this.up('catch')) {
+      this.player.hp = Math.min(this.maxHp, this.player.hp + 2);
+    }
     const syrup = SYRUPS.find(s => s.id === b.syrup) || SYRUPS[0];
     this.stats.syrupsShattered.add(b.syrup);
     let kills = 0;
@@ -424,7 +429,7 @@ export class Engine {
     if (c.kind === 'caramel') this.defeatedBrute = true;
     this.gainCrystals(c.crystals, c.x, c.y);
     this.pendingRelic = true;
-    this.setAnnounce(`${c.name} SHATTERED!`);
+    this.setAnnounce(`${c.name} CRACKED OPEN!`);
     this.shake = 12;
     this.emit({ type: 'bossdown' });
   }
@@ -704,7 +709,7 @@ export class Engine {
       if (c.trappedIn) continue;
       if (c.frozen > 0) { c.frozen -= dt; continue; }
       if (c.slowed > 0) c.slowed -= dt;
-      const slow = c.slowed > 0 ? 0.45 : 1;
+      const slow = (c.slowed > 0 ? 0.45 : 1) * (1 - 0.06 * this.up('thick'));
       c.wobble += dt * 3;
       let tx = CAULDRON.x, ty = CAULDRON.y, speed = c.speed * slow;
       const dCauldron = Math.hypot(c.x - CAULDRON.x, c.y - CAULDRON.y);

@@ -154,7 +154,7 @@ export class Renderer {
     ctx.stroke();
     if (b.trapped.length) {
       ctx.fillStyle = 'rgba(10,10,14,0.72)';
-      const label = `TRAPPED ${b.trapped.length}`;
+      const label = `COATED ${b.trapped.length}`;
       ctx.font = '700 10px system-ui, sans-serif';
       const w = ctx.measureText(label).width + 10;
       ctx.fillRect(b.x - w / 2, b.y + b.r + 4, w, 14);
@@ -273,6 +273,30 @@ export class Renderer {
         ctx.fillStyle = '#7ad0ff';
         circle(ctx, c.r * 0.2, c.r * 0.5, c.r * 0.2);
         this.eyes(ctx, -7, -2, 7, -2, 2.6);
+        break;
+      }
+      case 'tortoise': {
+        // toffee shell: a domed carapace with segment arcs over a darker rim
+        ctx.fillStyle = '#8a5a30';
+        ctx.beginPath();
+        ctx.ellipse(0, 3, c.r, c.r * 0.86, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = c.color;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, c.r * 0.82, c.r * 0.7, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(90,50,16,0.65)';
+        ctx.lineWidth = 2;
+        for (const f of [-0.45, 0, 0.45]) {
+          ctx.beginPath();
+          ctx.ellipse(0, 0, Math.abs(f) * c.r + 2, c.r * 0.7, 0, -1.1, 1.1);
+          ctx.stroke();
+        }
+        ctx.beginPath();
+        ctx.moveTo(-c.r * 0.8, 0); ctx.lineTo(c.r * 0.8, 0);
+        ctx.stroke();
+        this.eyes(ctx, -7, -3, 7, -3, 2.8);
+        this.mouth(ctx, 0, 5, 7);
         break;
       }
       case 'caramel': {

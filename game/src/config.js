@@ -32,6 +32,7 @@ export const CREATURES = {
   wisp: { name: 'Sour Wisp', hp: 2, speed: 58, r: 13, score: 120, crystals: 1, behaviour: 'cauldron', color: '#a0ffd0', leech: 1.2, splits: true },
   brute: { name: 'Jelly Brute', hp: 16, speed: 24, r: 26, score: 420, crystals: 5, behaviour: 'cauldron', color: '#ff9ff3', leech: 3.2, knockResist: 0.8 },
   golem: { name: 'Gumball Golem', hp: 26, speed: 20, r: 30, score: 650, crystals: 7, behaviour: 'hunter', color: '#ffd166', dmg: 20, knockResist: 0.9 },
+  tortoise: { name: 'Toffee Tortoise', hp: 30, speed: 15, r: 24, score: 550, crystals: 6, behaviour: 'cauldron', color: '#c98d5e', leech: 2.4, knockResist: 0.85 },
 };
 
 export const BOSSES = {
@@ -48,8 +49,8 @@ export const WAVES = [
   { name: 'HOLLOW VOICES', comp: [['fizzbat', 6], ['sourling', 10], ['lancer', 2]] },
   { name: 'THE LICORICE ROAD', comp: [['roller', 5], ['mite', 10], ['wisp', 4], ['lancer', 3]] },
   { name: 'SOMETHING STICKY', boss: 'caramel', comp: [['mite', 6]], trickle: [['mite', 2], ['sourling', 1]] },
-  { name: 'VAULT OF TEETH', comp: [['wisp', 8], ['lancer', 4], ['sourling', 12], ['golem', 1]] },
-  { name: 'THE LONG NIGHT SHIFT', comp: [['golem', 2], ['roller', 6], ['fizzbat', 8], ['wisp', 6]] },
+  { name: 'VAULT OF TEETH', comp: [['wisp', 8], ['lancer', 4], ['sourling', 12], ['golem', 1], ['tortoise', 2]] },
+  { name: 'THE LONG NIGHT SHIFT', comp: [['golem', 2], ['roller', 6], ['fizzbat', 8], ['wisp', 6], ['tortoise', 1]] },
   { name: 'THE BITTERING', boss: 'bitterking', comp: [['sourling', 6]], trickle: [['wisp', 1], ['fizzbat', 1], ['mite', 2]] },
 ];
 
@@ -75,6 +76,7 @@ export const UPGRADES = [
   { id: 'tooth', name: 'SWEET TOOTH', icon: 'E', desc: 'Crystals are worth 20% more.', max: 3 },
   { id: 'ember', name: 'EMBER HEART', icon: 'H', desc: 'The melt slowly re-stokes itself.', max: 3 },
   { id: 'boots', name: 'DASH BOOTS', icon: 'D', desc: 'Dash recharges 30% faster.', max: 3 },
+  { id: 'thick', name: 'THICK SYRUP', icon: 'Y', desc: 'Sourlings wade through syrup: 6% slower.', max: 3 },
 ];
 
 export const RELICS = [
@@ -88,6 +90,8 @@ export const RELICS = [
   { id: 'veil', name: 'FROSTING VEIL', icon: 'V', desc: 'Mint freezes last twice as long.' },
   { id: 'heart', name: 'CANDY HEART', icon: 'C', desc: 'Shattering a full bubble heals 2 health.' },
   { id: 'pipe', name: 'TWIN PIPE', icon: 'P', desc: 'A second, smaller bubble follows the first.' },
+  { id: 'lens', name: 'CRYSTAL LENS', icon: 'N', desc: 'Crystals from kills and bosses +25%.' },
+  { id: 'prism', name: 'STOKING PRISM', icon: 'Z', desc: 'Every cracked bubble stokes the melt: +2 heat.' },
 ];
 
 // Permanent workshop unlocks, bought with banked crystals between runs.
@@ -109,14 +113,14 @@ export const DIFFICULTIES = [
 ];
 
 export const FEATS = [
-  { id: 'king', name: 'SHATTERED KING BITTER' },
+  { id: 'king', name: 'CRACKED KING BITTER' },
   { id: 'brute', name: 'BROKE THE CARAMEL BRUTE' },
   { id: 'heat', name: 'KEPT THE MELT ABOVE HALF HEAT' },
   { id: 'health', name: 'FINISHED ABOVE HALF HEALTH' },
   { id: 'chain5', name: 'CHAIN OF 5 BUBBLES OR MORE' },
-  { id: 'trap4', name: 'TRAPPED 4 CREATURES IN ONE BUBBLE' },
+  { id: 'trap4', name: 'COATED 4 CREATURES IN ONE BUBBLE' },
   { id: 'combo5', name: 'REACHED COMBO x5' },
-  { id: 'allsyrup', name: 'SHATTERED ALL 4 SYRUPS' },
+  { id: 'allsyrup', name: 'CRACKED WITH ALL 4 SYRUPS' },
 ];
 
 export function gradeFor(score) {

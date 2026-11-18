@@ -153,11 +153,11 @@ export class UI {
     this.set('hr-combo', 'text', `x${engine.combo.toFixed(2)}`);
     this.set('hr-crystals', 'text', fmt(engine.crystals));
     const upList = UPGRADES.filter(u => engine.up(u.id) > 0);
-    this.set('hr-up-count', 'text', `${upList.reduce((a, u) => a + engine.up(u.id), 0)}/15`);
+    this.set('hr-up-count', 'text', `${upList.reduce((a, u) => a + engine.up(u.id), 0)}/${UPGRADES.length}`);
     this.set('hr-up-list', 'html', upList.length
       ? upList.map(u => `<div class="hr-item"><span class="hr-ico">${u.icon}</span>${u.name}<span class="hr-pips">${'●'.repeat(engine.up(u.id))}${'○'.repeat(u.max - engine.up(u.id))}</span></div>`).join('')
       : '<div class="hr-none">None yet — clear a wave.</div>');
-    this.set('hr-relic-count', 'text', `${engine.relics.length}/10`);
+    this.set('hr-relic-count', 'text', `${engine.relics.length}/${RELICS.length}`);
     this.set('hr-relic-list', 'html', engine.relics.length
       ? engine.relics.map(id => { const r = RELICS.find(x => x.id === id); return `<div class="hr-item"><span class="hr-ico relic">${r.icon}</span>${r.name}</div>`; }).join('')
       : '<div class="hr-none">None yet — take a SOUR SURGE road.</div>');
@@ -284,11 +284,11 @@ export class UI {
     this.set('end-grade', 'text', engine.grade);
     this.set('end-score', 'text', fmt(engine.score));
     const diffName = engine.difficulty.name;
-    this.set('end-detail', 'text', `${diffName} · ${won ? 'KING BITTER SHATTERED' : `FELL ON WAVE ${engine.waveIndex + 1}`} · FOUND THIS RUN: RELICS ${engine.relics.length}/10 · UPGRADES ${UPGRADES.reduce((a, u) => a + engine.up(u.id), 0)}/15 · ROADS: ${s.roadsTaken.map(r => r.toUpperCase()).join(', ') || '—'}`);
+    this.set('end-detail', 'text', `${diffName} · ${won ? 'KING BITTER CRACKED' : `FELL ON WAVE ${engine.waveIndex + 1}`} · FOUND THIS RUN: RELICS ${engine.relics.length}/${RELICS.length} · UPGRADES ${UPGRADES.reduce((a, u) => a + engine.up(u.id), 0)}/${UPGRADES.length} · ROADS: ${s.roadsTaken.map(r => r.toUpperCase()).join(', ') || '—'}`);
     const mins = Math.floor(s.time / 60);
     const secs = Math.floor(s.time % 60).toString().padStart(2, '0');
     const stats = [
-      ['KILLS', fmt(s.kills)], ['TRAPPED', fmt(s.trapped)], ['SHATTERS', fmt(s.shatters)],
+      ['KILLS', fmt(s.kills)], ['COATED', fmt(s.trapped)], ['CRACKS', fmt(s.shatters)],
       ['BEST CHAIN', `x${s.bestChain}`], ['BEST COMBO', `x${s.bestCombo.toFixed(2)}`], ['TIME', `${mins}:${secs}`],
     ];
     this.set('end-stats', 'html', stats.map(([l, v]) => `<div class="stat-box"><div class="sl">${l}</div><div class="sv">${v}</div></div>`).join(''));
