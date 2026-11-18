@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SUGARWRIGHT — trap the sourlings in spun-sugar bubbles</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #0d0906; height: 100%; overflow: hidden; }
+  body { font-family: system-ui, "Segoe UI", Roboto, sans-serif; color: #f5e9d2; }
+  #wrap { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
+  #stage { position: relative; width: 1280px; height: 720px; flex: none; transform-origin: center center; background: #17100c; }
+  canvas#game { position: absolute; inset: 0; display: block; }
+  .hidden { display: none !important; }
+
+  /* ---------- shared panel look ---------- */
+  .panel { background: rgba(18, 12, 9, 0.9); border: 1.5px solid #7a5226; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.45); }
+  .amber { color: #ffb03a; }
+  .btn { cursor: pointer; border: 1.5px solid #a8742f; background: linear-gradient(180deg, #ffcf6e, #f5a623); color: #241304; font-weight: 800; border-radius: 10px; text-align: center; letter-spacing: 0.04em; }
+  .btn:hover { filter: brightness(1.08); }
+  .btn.dark { background: rgba(30,20,12,0.92); color: #f5e9d2; border-color: #7a5226; }
+  .btn:disabled { opacity: 0.45; cursor: default; filter: none; }
+
+  /* ---------- HUD ---------- */
+  #hud { position: absolute; inset: 0; pointer-events: none; }
+  #hud-left { position: absolute; left: 10px; top: 10px; width: 246px; padding: 10px 12px; }
+  #hl-realm { font-size: 12.5px; font-weight: 800; color: #ffb03a; letter-spacing: 0.03em; }
+  #hl-wave { font-size: 19px; font-weight: 900; margin-top: 2px; }
+  #hl-boss-name { font-size: 12px; font-weight: 700; color: #ff9d9d; margin-top: 3px; min-height: 15px; }
+  .bar { position: relative; height: 15px; background: #241209; border: 1px solid #6b4a26; border-radius: 5px; overflow: hidden; margin-top: 4px; }
+  .bar > div { position: absolute; inset: 0; transform-origin: left center; }
+  .bar > span { position: absolute; right: 6px; top: 0; font-size: 11px; font-weight: 800; line-height: 15px; color: #fff; text-shadow: 0 1px 2px #000; }
+  .barlabel { font-size: 11px; font-weight: 800; letter-spacing: 0.06em; margin-top: 8px; display: flex; justify-content: space-between; }
+  #hl-boss-fill { background: linear-gradient(90deg, #ff5d5d, #ff9d5d); }
+  #hl-heat-fill { background: linear-gradient(90deg, #ff7b2e, #ffc93a); }
+  #hl-incoming { margin-top: 9px; font-size: 11.5px; line-height: 1.5; color: #d9c9a8; border-top: 1px solid #4a3520; padding-top: 7px; }
+  #hl-incoming b { color: #ffb03a; font-size: 10.5px; letter-spacing: 0.08em; }
+  .inc-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin: 0 2px 0 6px; vertical-align: -1px; }
+
+  #hud-top { position: absolute; left: 268px; top: 10px; width: 744px; padding: 8px 12px; }
+  #ht-rules { display: flex; gap: 8px; align-items: stretch; }
+  .rule { flex: 1; border-radius: 7px; padding: 5px 9px; font-size: 12px; font-weight: 700; display: flex; gap: 7px; align-items: center; }
+  .rule .tag { font-weight: 900; font-size: 11px; padding: 2px 6px; border-radius: 4px; color: #10131a; }
+  .rule.win { background: rgba(46, 90, 40, 0.55); } .rule.win .tag { background: #69d66b; }
+  .rule.lose { background: rgba(100, 36, 36, 0.55); } .rule.lose .tag { background: #ff7b7b; }
+  .rule.boss { background: rgba(60, 44, 16, 0.6); flex: 0 0 168px; justify-content: center; color: #ffd23f; }
+  #ht-road { display: flex; align-items: center; gap: 0; margin-top: 8px; padding: 0 4px; }
+  .road-node { width: 30px; height: 30px; border-radius: 50%; border: 2px solid #7a5226; background: #241a12; display: flex; align-items: center; justify-content: center; font-size: 13px; flex: none; position: relative; }
+  .road-node.done { background: #8a5a1d; color: #ffe9a8; }
+  .road-node.now { border-color: #ffd23f; box-shadow: 0 0 0 3px rgba(255,210,63,0.35); color: #ffd23f; }
+  .road-node.boss { border-color: #ff5d5d; color: #ff9d9d; }
+  .road-link { flex: 1; height: 3px; background: #4a3520; }
+  .road-link.done { background: #c98a3d; }
+  .road-realm { font-size: 9px; font-weight: 800; letter-spacing: 0.05em; color: #c9a86a; text-align: center; margin-top: 3px; }
+
+  #hud-right { position: absolute; right: 10px; top: 10px; width: 246px; padding: 10px 12px; }
+  #hr-score { font-size: 27px; font-weight: 900; color: #ffd23f; line-height: 1; }
+  .hr-row { display: flex; justify-content: space-between; font-size: 12px; font-weight: 800; margin-top: 3px; }
+  .hr-row .lab { color: #c9a86a; letter-spacing: 0.05em; }
+  #hr-upgrades, #hr-relics { margin-top: 8px; border-top: 1px solid #4a3520; padding-top: 7px; }
+  #hr-upgrades h4, #hr-relics h4 { font-size: 10.5px; letter-spacing: 0.08em; color: #ffb03a; margin-bottom: 4px; }
+  .hr-item { display: flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 700; line-height: 1.65; }
+  .hr-ico { width: 17px; height: 17px; border-radius: 4px; background: #f5a623; color: #241304; font-size: 10.5px; font-weight: 900; display: inline-flex; align-items: center; justify-content: center; flex: none; }
+  .hr-ico.relic { background: #b07fe8; color: #1c1030; border-radius: 50%; }
+  .hr-pips { margin-left: auto; color: #ffd23f; font-size: 9px; letter-spacing: 2px; }
+  .hr-none { font-size: 11px; color: #8a7658; }
+
+  #hud-bl { position: absolute; left: 10px; bottom: 10px; width: 246px; padding: 9px 12px; }
+  #hb-hp-fill { background: linear-gradient(90deg, #e84545, #ff7b7b); }
+  #hb-breath-fill { background: linear-gradient(90deg, #3fa7e8, #7ad0ff); }
+  #hud-bc { position: absolute; left: 268px; bottom: 10px; width: 744px; padding: 8px 10px; display: flex; gap: 6px; align-items: center; justify-content: center; }
+  .chip { font-size: 11px; font-weight: 800; background: rgba(36,24,14,0.9); border: 1px solid #6b4a26; border-radius: 6px; padding: 5px 8px; white-space: nowrap; }
+  .chip b { color: #ffd23f; }
+  .chip.syrup { cursor: pointer; pointer-events: auto; display: inline-flex; gap: 5px; align-items: center; }
+  .chip.syrup .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .chip.syrup.sel { border-color: #ffd23f; box-shadow: 0 0 0 2px rgba(255,210,63,0.35); }
+  .chip.syrup.locked { opacity: 0.4; }
+
+  #announce { position: absolute; left: 268px; top: 108px; width: 744px; text-align: center; font-size: 30px; font-weight: 900; color: #ffd23f; text-shadow: 0 2px 0 #7a3c00, 0 4px 14px rgba(0,0,0,0.7); letter-spacing: 0.02em; }
+  #pause-overlay { position: absolute; inset: 0; background: rgba(8,5,3,0.72); display: flex; flex-direction: column; gap: 14px; align-items: center; justify-content: center; pointer-events: auto; z-index: 30; }
+  #pause-overlay h2 { font-size: 44px; font-weight: 900; letter-spacing: 0.06em; }
+  #pause-overlay .btn { padding: 12px 34px; font-size: 17px; }
+
+  /* ---------- screens ---------- */
+  .screen { position: absolute; inset: 0; z-index: 20; }
+  #screen-title { background: linear-gradient(100deg, rgba(16,10,6,0.97) 0 55%, rgba(16,10,6,0.55) 78%, rgba(16,10,6,0.25)); display: flex; }
+  .t-left { width: 640px; padding: 26px 30px; }
+  .t-right { flex: 1; padding: 26px 26px 26px 6px; display: flex; flex-direction: column; gap: 12px; }
+  #screen-title h1 { font-size: 74px; font-weight: 900; letter-spacing: 0.01em; line-height: 0.95; background: linear-gradient(180deg, #ffe9a8, #f5a623 70%, #d97b16); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: none; }
+  .t-tag { font-size: 16.5px; font-weight: 700; margin-top: 8px; color: #fff3d6; }
+  .t-counts { font-size: 14.5px; font-weight: 800; color: #ffb03a; margin-top: 5px; letter-spacing: 0.02em; }
+  .t-goals { margin-top: 13px; display: flex; flex-direction: column; gap: 5px; font-size: 13.5px; font-weight: 700; }
+  .t-goals .g { display: flex; gap: 8px; align-items: center; }
+  .t-goals .tag { font-size: 10.5px; font-weight: 900; padding: 2px 7px; border-radius: 4px; color: #10131a; width: 46px; text-align: center; flex: none; }
+  .tag.goal { background: #ffd23f; } .tag.win { background: #69d66b; } .tag.lose { background: #ff7b7b; }
+  .t-diff-label { margin-top: 15px; font-size: 11px; font-weight: 900; letter-spacing: 0.09em; color: #c9a86a; }
+  #diff-row { display: flex; gap: 8px; margin-top: 6px; }
+  .diff-btn { flex: 1; padding: 9px 6px; border-radius: 9px; border: 1.5px solid #6b4a26; background: rgba(30,20,12,0.92); cursor: pointer; text-align: center; }
+  .diff-btn .dn { font-size: 15px; font-weight: 900; }
+  .diff-btn .dm { font-size: 10.5px; color: #c9a86a; font-weight: 700; margin-top: 2px; }
+  .diff-btn.sel { border-color: #ffd23f; box-shadow: 0 0 0 2px rgba(255,210,63,0.35); }
+  #btn-play { margin-top: 14px; padding: 13px; font-size: 27px; }
+  #btn-play small { display: block; font-size: 11px; font-weight: 800; letter-spacing: 0.12em; }
+  .t-workshop { margin-top: 16px; }
+  .t-workshop h3 { font-size: 14px; font-weight: 900; letter-spacing: 0.04em; display: flex; justify-content: space-between; align-items: baseline; }
+  .t-workshop h3 .banked { color: #ffe066; font-size: 15px; }
+  #ws-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin-top: 8px; }
+  .ws-card { border: 1.5px solid #6b4a26; border-radius: 8px; padding: 7px 8px; background: rgba(30,20,12,0.92); cursor: pointer; min-height: 74px; }
+  .ws-card:hover { border-color: #c98a3d; }
+  .ws-card .wi { display: flex; gap: 6px; align-items: center; }
+  .ws-card .wic { width: 21px; height: 21px; border-radius: 5px; background: #f5a623; color: #241304; font-size: 9.5px; font-weight: 900; display: inline-flex; align-items: center; justify-content: center; flex: none; }
+  .ws-card .wn { font-size: 11px; font-weight: 900; line-height: 1.15; }
+  .ws-card .wd { font-size: 9.5px; color: #c9a86a; font-weight: 600; margin-top: 3px; line-height: 1.25; }
+  .ws-card .wp { margin-top: 5px; font-size: 11px; font-weight: 900; }
+  .ws-card .wp.buy { color: #241304; background: #ffd23f; border-radius: 4px; text-align: center; padding: 2px 0; }
+  .ws-card .wp.max { color: #69d66b; }
+  .ws-card .wp.pips { color: #ffd23f; letter-spacing: 2px; font-size: 9px; }
+  .t-demo { height: 252px; border: 1.5px solid #7a5226; border-radius: 10px; position: relative; background: transparent; }
+  .t-demo .cap { position: absolute; top: 0; left: 0; right: 0; background: rgba(18,12,9,0.92); color: #ffb03a; font-size: 12.5px; font-weight: 900; letter-spacing: 0.05em; padding: 6px 12px; border-radius: 9px 9px 0 0; }
+  .t-how { display: flex; gap: 8px; }
+  .how-card { flex: 1; padding: 9px 10px; text-align: center; }
+  .how-card .n { width: 21px; height: 21px; border-radius: 50%; background: #f5a623; color: #241304; font-weight: 900; font-size: 12px; display: inline-flex; align-items: center; justify-content: center; }
+  .how-card .hw { font-size: 15px; font-weight: 900; margin-top: 4px; }
+  .how-card .hd { font-size: 10.5px; color: #c9a86a; font-weight: 600; margin-top: 2px; line-height: 1.3; }
+  .t-best { padding: 10px 14px; }
+  .t-best .brow { display: flex; justify-content: space-between; align-items: baseline; }
+  .t-best .bscore { font-size: 25px; font-weight: 900; color: #ffd23f; }
+  .t-best h4 { font-size: 10.5px; letter-spacing: 0.08em; color: #ffb03a; }
+  #t-last-runs { margin-top: 6px; font-size: 12.5px; font-weight: 700; line-height: 1.7; }
+  #t-last-runs .g { display: inline-block; width: 19px; height: 19px; border-radius: 50%; background: #f5a623; color: #241304; font-weight: 900; font-size: 11px; text-align: center; line-height: 19px; margin-right: 7px; }
+
+  #screen-inter { background: rgba(10, 6, 4, 0.88); padding: 30px 46px; }
+  #inter-title { font-size: 46px; font-weight: 900; text-align: center; color: #fff3d6; letter-spacing: 0.02em; }
+  .inter-cols { display: flex; gap: 26px; margin-top: 20px; }
+  .inter-col { flex: 1; }
+  .inter-col h3 { font-size: 16px; font-weight: 900; letter-spacing: 0.03em; margin-bottom: 10px; }
+  .inter-col h3 span { color: #c9a86a; font-size: 11.5px; letter-spacing: 0.06em; }
+  #inter-upgrades { display: flex; gap: 10px; }
+  .up-card { flex: 1; border: 2px solid #6b4a26; border-radius: 11px; padding: 13px 12px; background: rgba(30,20,12,0.95); cursor: pointer; min-height: 168px; }
+  .up-card.sel { border-color: #69d66b; box-shadow: 0 0 0 3px rgba(105,214,107,0.3); }
+  .up-card .key { display: inline-block; background: #f5e9d2; color: #241304; font-weight: 900; font-size: 12px; border-radius: 4px; padding: 1px 7px; }
+  .up-card .chosen { float: right; background: #69d66b; color: #0d200d; font-size: 10px; font-weight: 900; border-radius: 4px; padding: 2px 6px; }
+  .up-card .uic { width: 52px; height: 52px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #ffe9a8, #f5a623); color: #241304; font-size: 23px; font-weight: 900; display: flex; align-items: center; justify-content: center; margin: 10px auto 8px; }
+  .up-card .un { font-size: 16.5px; font-weight: 900; text-align: center; }
+  .up-card .ud { font-size: 11.5px; color: #d9c9a8; text-align: center; margin-top: 5px; line-height: 1.35; min-height: 32px; }
+  .up-card .up { text-align: center; margin-top: 5px; }
+  .up-card .up .pips { color: #ffd23f; letter-spacing: 3px; font-size: 11px; }
+  .up-card .up .new { color: #69d66b; font-size: 10px; font-weight: 900; letter-spacing: 0.08em; }
+  #inter-roads { display: flex; flex-direction: column; gap: 9px; }
+  .road-row { border: 2px solid #6b4a26; border-radius: 10px; padding: 11px 14px; background: rgba(30,20,12,0.95); cursor: pointer; display: flex; gap: 12px; align-items: center; }
+  .road-row.sel { border-color: #69d66b; box-shadow: 0 0 0 3px rgba(105,214,107,0.3); }
+  .road-row .ric { width: 40px; height: 40px; border-radius: 50%; font-size: 18px; display: flex; align-items: center; justify-content: center; flex: none; background: #3a2a16; }
+  .road-row .rn { font-size: 16.5px; font-weight: 900; }
+  .road-row .rd { font-size: 11.5px; color: #c9a86a; font-weight: 700; }
+  .road-row .chosen { margin-left: auto; background: #69d66b; color: #0d200d; font-size: 10px; font-weight: 900; border-radius: 4px; padding: 2px 6px; }
+  #inter-map { margin-top: 22px; padding: 12px 16px; }
+  #inter-map .realms { display: flex; gap: 18px; }
+  #inter-map .realm { flex: 1; }
+  #inter-map .realm h5 { font-size: 12px; font-weight: 900; letter-spacing: 0.05em; margin-bottom: 7px; }
+  #inter-map .nodes { display: flex; align-items: center; }
+  #inter-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 18px; }
+  #inter-next { font-size: 14.5px; font-weight: 700; }
+  #inter-next b { color: #ffb03a; font-size: 16.5px; }
+  #inter-owned { font-size: 11.5px; color: #c9a86a; font-weight: 700; margin-top: 3px; }
+  #btn-continue { padding: 12px 40px; font-size: 19px; }
+
+  #screen-end { background: rgba(10, 6, 4, 0.9); padding: 30px 52px; }
+  #end-title { font-size: 58px; font-weight: 900; text-align: center; letter-spacing: 0.04em; color: #ffd23f; }
+  #end-title.lost { color: #ff7b7b; }
+  #end-sub { text-align: center; font-size: 16.5px; font-weight: 800; margin-top: 2px; }
+  .end-cols { display: flex; gap: 22px; margin-top: 20px; }
+  #end-grade-wrap { width: 190px; text-align: center; }
+  #end-grade { width: 158px; height: 158px; border-radius: 50%; margin: 4px auto; background: radial-gradient(circle at 35% 30%, #ffe9a8, #f5a623 75%); color: #241304; font-size: 96px; font-weight: 900; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 34px rgba(245,166,35,0.4); }
+  #end-grade-wrap .gl { font-size: 12px; font-weight: 900; letter-spacing: 0.14em; color: #c9a86a; margin-top: 6px; }
+  #end-main { flex: 1; }
+  #end-score-lab { font-size: 11px; font-weight: 900; letter-spacing: 0.09em; color: #c9a86a; }
+  #end-score { font-size: 42px; font-weight: 900; color: #ffd23f; line-height: 1.05; }
+  #end-detail { font-size: 12.5px; font-weight: 700; color: #7ad0ff; margin-top: 2px; }
+  #end-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 13px; }
+  .stat-box { background: rgba(30,20,12,0.95); border: 1px solid #6b4a26; border-radius: 8px; padding: 8px 12px; }
+  .stat-box .sl { font-size: 10px; font-weight: 900; letter-spacing: 0.08em; color: #c9a86a; }
+  .stat-box .sv { font-size: 21px; font-weight: 900; margin-top: 1px; }
+  #end-feats { width: 300px; padding: 12px 14px; }
+  #end-feats h4 { font-size: 12px; font-weight: 900; letter-spacing: 0.07em; margin-bottom: 7px; }
+  .feat { font-size: 12px; font-weight: 700; line-height: 1.45; display: flex; gap: 7px; }
+  .feat .box { width: 15px; height: 15px; border-radius: 4px; flex: none; margin-top: 1px; text-align: center; font-size: 11px; line-height: 15px; }
+  .feat.done .box { background: #69d66b; color: #0d200d; }
+  .feat.miss { color: #8a7658; } .feat.miss .box { background: #3a2c1c; }
+  .end-row2 { display: flex; gap: 10px; margin-top: 12px; }
+  .mini-box { flex: 1; background: rgba(30,20,12,0.95); border: 1px solid #6b4a26; border-radius: 8px; padding: 8px 12px; }
+  .mini-box .sl { font-size: 10px; font-weight: 900; letter-spacing: 0.08em; color: #c9a86a; }
+  .mini-box .sv { font-size: 16.5px; font-weight: 900; margin-top: 2px; }
+  .mini-box .sv small { font-size: 11px; color: #c9a86a; font-weight: 700; }
+  .end-actions { display: flex; gap: 12px; justify-content: center; margin-top: 22px; }
+  .end-actions .btn { padding: 13px 36px; font-size: 18px; }
+  #end-lastruns { position: absolute; left: 52px; bottom: 26px; font-size: 12.5px; font-weight: 700; line-height: 1.7; }
+  #end-lastruns h4 { font-size: 10.5px; letter-spacing: 0.08em; color: #ffb03a; }
+  #end-lastruns .g { display: inline-block; width: 19px; height: 19px; border-radius: 50%; background: #f5a623; color: #241304; font-weight: 900; font-size: 11px; text-align: center; line-height: 19px; margin-right: 7px; }
+</style>
+</head>
+<body>
+<div id="wrap">
+<div id="stage">
+  <canvas id="game" width="1280" height="720"></canvas>
+
+  <!-- ================= HUD ================= -->
+  <div id="hud" class="hidden">
+    <div id="hud-left" class="panel">
+      <div id="hl-realm">REALM 1 OF 3 — THE SUGAR MILL</div>
+      <div id="hl-wave">WAVE 1/9</div>
+      <div id="hl-boss-name"></div>
+      <div class="bar"><div id="hl-boss-fill"></div><span id="hl-boss-num"></span></div>
+      <div class="barlabel"><span>MELT HEAT</span><span id="hl-heat-num">120 / 120</span></div>
+      <div class="bar"><div id="hl-heat-fill"></div></div>
+      <div id="hl-incoming"><b>INCOMING</b><span id="hl-incoming-list"></span></div>
+    </div>
+
+    <div id="hud-top" class="panel">
+      <div id="ht-rules">
+        <div class="rule win"><span class="tag">WIN</span><span id="ht-win">clear 9 waves and shatter KING BITTER</span></div>
+        <div class="rule lose"><span class="tag">LOSE</span><span>melt heat hits 0 or your health hits 0</span></div>
+        <div class="rule boss" id="ht-boss">BOSS —</div>
+      </div>
+      <div id="ht-road"></div>
+    </div>
+
+    <div id="hud-right" class="panel">
+      <div class="hr-row"><span class="lab">SCORE</span><span class="lab">BEST <span id="hr-best">0</span></span></div>
+      <div id="hr-score">0</div>
+      <div class="hr-row"><span>COMBO <span class="amber" id="hr-combo">x1.00</span></span><span>CRYSTALS ◆ <span class="amber" id="hr-crystals">0</span></span></div>
+      <div id="hr-upgrades"><h4>RUN UPGRADES <span id="hr-up-count">0/15</span></h4><div id="hr-up-list"></div></div>
+      <div id="hr-relics"><h4>RELICS <span id="hr-relic-count">0/10</span></h4><div id="hr-relic-list"></div></div>
+    </div>
+
+    <div id="hud-bl" class="panel">
+      <div class="barlabel" style="margin-top:0"><span>HEALTH</span><span id="hb-hp-num">150 / 150</span></div>
+      <div class="bar"><div id="hb-hp-fill"></div></div>
+      <div class="barlabel"><span>BREATH</span><span id="hb-breath-num">100 / 100</span></div>
+      <div class="bar"><div id="hb-breath-fill"></div></div>
+    </div>
+
+    <div id="hud-bc" class="panel">
+      <span class="chip"><b>WASD</b> MOVE</span>
+      <span class="chip"><b>HOLD LMB</b> BLOW</span>
+      <span class="chip"><b>RMB</b> SHATTER</span>
+      <span class="chip"><b>SPACE</b> DASH</span>
+      <span id="syrup-chips"></span>
+      <span class="chip"><b>P</b> PAUSE</span>
+      <span class="chip"><b>M</b> SOUND</span>
+    </div>
+
+    <div id="announce" class="hidden"></div>
+
+    <div id="pause-overlay" class="hidden">
+      <h2>PAUSED</h2>
+      <div class="btn" id="btn-resume">RESUME</div>
+      <div class="btn dark" id="btn-quit">QUIT TO TITLE</div>
+    </div>
+  </div>
+
+  <!-- ================= TITLE ================= -->
+  <div id="screen-title" class="screen">
+    <div class="t-left">
+      <h1>SUGARWRIGHT</h1>
+      <div class="t-tag">Trap the sourlings in spun-sugar bubbles. Shatter them. Chain the candy.</div>
+      <div class="t-counts">3 REALMS · 9 WAVES · 2 BOSSES · 8 CREATURES · 15 UPGRADES · 10 RELICS · 4 SYRUPS</div>
+      <div class="t-goals">
+        <div class="g"><span class="tag goal">GOAL</span> keep the melt hot, 9 waves</div>
+        <div class="g"><span class="tag win">WIN</span> shatter KING BITTER on wave 9</div>
+        <div class="g"><span class="tag lose">LOSE</span> melt heat or health hits 0</div>
+      </div>
+      <div class="t-diff-label">DIFFICULTY · KEYS 1 2 3</div>
+      <div id="diff-row"></div>
+      <div class="btn" id="btn-play">PLAY<small>ENTER OR CLICK</small></div>
+      <div class="t-workshop">
+        <h3>WORKSHOP — 8 PERMANENT UNLOCKS <span class="banked">BANKED ◆ <span id="ws-banked">0</span></span></h3>
+        <div id="ws-grid"></div>
+      </div>
+    </div>
+    <div class="t-right">
+      <div class="t-demo"><div class="cap" id="demo-cap">REALM 1 OF 3 — THE SUGAR MILL · LIVE DEMO</div></div>
+      <div class="t-how">
+        <div class="how-card panel"><span class="n">1</span><div class="hw">BLOW</div><div class="hd">Hold LMB: a sugar bubble grows on your pipe. Breath is the limit.</div></div>
+        <div class="how-card panel"><span class="n">2</span><div class="hw">TRAP</div><div class="hd">Release to set it adrift. Sourlings that touch it get stuck inside.</div></div>
+        <div class="how-card panel"><span class="n">3</span><div class="hw">SHATTER</div><div class="hd">RMB pops every bubble at once. Near bubbles, big chains, more candy.</div></div>
+      </div>
+      <div class="t-best panel">
+        <div class="brow"><h4>BEST</h4><span class="bscore" id="t-best-score">0</span></div>
+        <h4 style="margin-top:6px">LAST RUNS</h4>
+        <div id="t-last-runs"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= INTERMISSION ================= -->
+  <div id="screen-inter" class="screen hidden">
+    <div id="inter-title">WAVE 1/9 CLEARED</div>
+    <div class="inter-cols">
+      <div class="inter-col">
+        <h3>1 · PICK AN UPGRADE <span>KEYS 1 2 3</span></h3>
+        <div id="inter-upgrades"></div>
+      </div>
+      <div class="inter-col" style="flex:0 0 400px">
+        <h3>2 · PICK YOUR ROAD <span>Q W E</span></h3>
+        <div id="inter-roads"></div>
+      </div>
+    </div>
+    <div id="inter-map" class="panel">
+      <div class="realms" id="inter-realms"></div>
+    </div>
+    <div id="inter-foot">
+      <div>
+        <div id="inter-next">NEXT <b>WAVE 2</b></div>
+        <div id="inter-owned"></div>
+      </div>
+      <div class="btn" id="btn-continue">ENTER · CONTINUE</div>
+    </div>
+  </div>
+
+  <!-- ================= END ================= -->
+  <div id="screen-end" class="screen hidden">
+    <div id="end-title">VICTORY</div>
+    <div id="end-sub">3 REALMS · 2 BOSSES · +0 CRYSTALS</div>
+    <div class="end-cols">
+      <div id="end-grade-wrap">
+        <div id="end-grade">S</div>
+        <div class="gl">GRADE</div>
+      </div>
+      <div id="end-main">
+        <div id="end-score-lab">SCORE</div>
+        <div id="end-score">0</div>
+        <div id="end-detail"></div>
+        <div id="end-stats"></div>
+        <div class="end-row2">
+          <div class="mini-box"><div class="sl">CRYSTALS EARNED</div><div class="sv" id="end-earned">◆ +0</div></div>
+          <div class="mini-box"><div class="sl">REALM REACHED</div><div class="sv" id="end-realm">1/3</div></div>
+          <div class="mini-box"><div class="sl">RELICS FOUND</div><div class="sv" id="end-relics">0</div></div>
+          <div class="mini-box"><div class="sl">ROAD TAKEN</div><div class="sv" id="end-roads"></div></div>
+        </div>
+      </div>
+      <div id="end-feats" class="panel"><h4 id="end-feats-title">FEATS 0/8</h4><div id="end-feats-list"></div></div>
+    </div>
+    <div class="end-actions">
+      <div class="btn" id="btn-again">R · PLAY AGAIN</div>
+      <div class="btn dark hidden" id="btn-endless">ENDLESS NIGHT →</div>
+      <div class="btn dark" id="btn-title2">T · TITLE &amp; DIFFICULTY</div>
+    </div>
+    <div id="end-lastruns"><h4>LAST RUNS</h4><div id="end-lastruns-list"></div></div>
+  </div>
+
+</div>
+</div>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
